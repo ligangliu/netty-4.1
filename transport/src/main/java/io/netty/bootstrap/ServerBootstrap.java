@@ -79,6 +79,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
      * {@link Channel}'s.
      */
     public ServerBootstrap group(EventLoopGroup parentGroup, EventLoopGroup childGroup) {
+        //将bossGroup赋值给AbstractBootstrap的EventLoopGroup group
         super.group(parentGroup);
         ObjectUtil.checkNotNull(childGroup, "childGroup");
         if (this.childGroup != null) {
@@ -156,6 +157,12 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                 ch.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {
+                        /**
+                         * ServerBootstrapAcceptor 由Netty提供的，
+                         * 就是由他注册到WorkerGroup上的
+                         * ServerBootstrapAcceptor 也是一个ChannelHandler
+                         * 在其中的channelRead方法中有注册的逻辑
+                         */
                         pipeline.addLast(new ServerBootstrapAcceptor(
                                 ch, currentChildGroup, currentChildHandler, currentChildOptions, currentChildAttrs));
                     }

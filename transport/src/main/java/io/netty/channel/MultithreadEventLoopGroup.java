@@ -49,6 +49,10 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
      * @see MultithreadEventExecutorGroup#MultithreadEventExecutorGroup(int, Executor, Object...)
      */
     protected MultithreadEventLoopGroup(int nThreads, Executor executor, Object... args) {
+        /**
+         * 先判断系统属性中是否有值，如果有DEFAULT_EVENT_LOOP_THREADS=系统的
+         * 如果没有，则是系统可用线程数 * 2
+         */
         super(nThreads == 0 ? DEFAULT_EVENT_LOOP_THREADS : nThreads, executor, args);
     }
 

@@ -77,6 +77,21 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
              * 默认的线程池ThreadPerTaskExecutor
              * 该线程池没有任务队列，提交任务后，创建任何线程类型都是 FastThreadLocalRunnable。
              * 并且立即 start
+             *
+             * 理解清除，任务 与 线程
+             * 线程本身创建，由线程池创建
+             * 任务  我们实现Runnable接口 实现线程需要执行的逻辑
+             */
+            /**
+             * ThreadPerTaskExecutor implements Executor {
+             *     //实现了execute()
+             *     //这就是命令模式 + 代理模式
+             *     //命令模式：Runnable逻辑由其他提供
+             *     //代理模式：具体的执行又是交由threadFactory执行
+             *     public void execute(Runnable command) {
+             *         threadFactory.newThread(command).start();
+             *     }
+             * }
              */
             executor = new ThreadPerTaskExecutor(newDefaultThreadFactory());
         }
@@ -93,6 +108,9 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
                  * 对每一个工作线程进行初始化
                  * 在NioEventLoopGroup中调用newChild创建个NioEventLoop
                  * NioEventLoop中有一个run()是执行的逻辑的关键
+                 * NioEventLoop中 有selector引用，
+                 * 因为args中包含了SelectorProvider provider = SelectorProvider.provider();
+                 * 再通过Selector selector = provider.openSelector();就可以得到一个Selector选择器
                  */
                 children[i] = newChild(executor, args);
                 success = true;
