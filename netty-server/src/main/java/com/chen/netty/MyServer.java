@@ -30,7 +30,7 @@ public class MyServer {
          *
          */
         //第一步建立bossGroup 接受数据然后转发给workerGroup ，是一个死循环
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
+        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         //第二部 workerGroup 完成实际数据的处理，也是一个死循环
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -56,7 +56,10 @@ public class MyServer {
                      */
                     .channel(NioServerSocketChannel.class)
                     //对ServerBootstrap中childOptions赋值
+                    //ChannelOption 对应的就是TCP的一些配置属性
                     .childOption(ChannelOption.SO_BACKLOG,100)
+                    //Attributes维护一些业务数据key-value，在后期可以进行获取
+                   // .attr(null,null)
                     //对ServerBootstrap中private volatile ChannelHandler handler;赋值
                     .handler(new LoggingHandler(LogLevel.INFO))
                     //对ServerBootstrap中private volatile ChannelHandler childHandler;赋值

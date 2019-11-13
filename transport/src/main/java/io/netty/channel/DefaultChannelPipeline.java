@@ -90,6 +90,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     private boolean registered;
 
     protected DefaultChannelPipeline(Channel channel) {
+        //DefaultChannelPipeline 中又包含channel的引用，也就是两者互为包含引用
         this.channel = ObjectUtil.checkNotNull(channel, "channel");
         succeededFuture = new SucceededChannelFuture(channel, null);
         voidPromise =  new VoidChannelPromise(channel, true);
@@ -234,6 +235,9 @@ public class DefaultChannelPipeline implements ChannelPipeline {
                 return this;
             }
         }
+        /**
+         * 在这里调用handler().handlerAdded()方法
+         */
         callHandlerAdded0(newCtx);
         return this;
     }
