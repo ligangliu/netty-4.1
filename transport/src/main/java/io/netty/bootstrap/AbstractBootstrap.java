@@ -64,6 +64,8 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     }
 
     AbstractBootstrap(AbstractBootstrap<B, C> bootstrap) {
+        //在ServerBootstrap的构造方法中super(boosGroup)
+        //所以这个group就是我们程序传进来的EventLoopGroup bossGroup = new NioEventLoopGroup();
         group = bootstrap.group;
         channelFactory = bootstrap.channelFactory;
         handler = bootstrap.handler;
@@ -299,8 +301,14 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     final ChannelFuture initAndRegister() {
         Channel channel = null;
         try {
-            //NioServerSocketChannle
+            /**
+             * channelFactory在.channel(NioServerSocketChannel.class)创建了一个ReflectiveChannelFactory
+             * 然后通过ReflectiveChannelFactory.newChannel通过NioServerSocketChannel反射的默认构造方法创建
+             */
             channel = channelFactory.newChannel();
+            /**
+             *
+             */
             init(channel);
         } catch (Throwable t) {
             if (channel != null) {
@@ -312,7 +320,13 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             // as the Channel is not registered yet we need to force the usage of the GlobalEventExecutor
             return new DefaultChannelPromise(new FailedChannel(), GlobalEventExecutor.INSTANCE).setFailure(t);
         }
-
+        /**
+         * 上面就是一些初始化工作
+         * 包含Handler之间的关联关系等
+         * 下面是Channel的注册
+         * group() 就是NioEventLoopGroup
+         * register(channel) 最后进入的是SingleThreadEventLoop
+         */
         ChannelFuture regFuture = config().group().register(channel);
         if (regFuture.cause() != null) {
             if (channel.isRegistered()) {

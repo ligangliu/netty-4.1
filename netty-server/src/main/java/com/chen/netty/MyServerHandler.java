@@ -24,4 +24,8 @@ public class MyServerHandler extends SimpleChannelInboundHandler<String> {
         ctx.close();
     }
 
+    @Override
+    public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+        super.handlerAdded(ctx);
+    }
 }

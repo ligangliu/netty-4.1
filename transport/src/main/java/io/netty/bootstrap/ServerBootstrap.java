@@ -51,6 +51,10 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
     private final Map<ChannelOption<?>, Object> childOptions = new ConcurrentHashMap<ChannelOption<?>, Object>();
     private final Map<AttributeKey<?>, Object> childAttrs = new ConcurrentHashMap<AttributeKey<?>, Object>();
 
+    /**
+     * config 中又将ServerBootstarp传入其构造方法中
+     * 也就是config中又有ServerBootstrap中所有初始化信息
+     */
     private final ServerBootstrapConfig config = new ServerBootstrapConfig(this);
     private volatile EventLoopGroup childGroup;
     private volatile ChannelHandler childHandler;
@@ -58,6 +62,10 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
     public ServerBootstrap() { }
 
     private ServerBootstrap(ServerBootstrap bootstrap) {
+        /**
+         * 将bossGroup传递进去用于注册Channel（可以理解为注册一个OP_ACCEPT事件）
+         * 也就是NIO中serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+         */
         super(bootstrap);
         childGroup = bootstrap.childGroup;
         childHandler = bootstrap.childHandler;
@@ -79,6 +87,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
      * {@link Channel}'s.
      */
     public ServerBootstrap group(EventLoopGroup parentGroup, EventLoopGroup childGroup) {
+        //将bossGroup赋值给AbstractBootstrap的EventLoopGroup group
         super.group(parentGroup);
         ObjectUtil.checkNotNull(childGroup, "childGroup");
         if (this.childGroup != null) {
@@ -131,9 +140,16 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
      */
     @Override
     void init(Channel channel) {
+        //ChannelOption 对应的就是TCP的一些配置属性
         setChannelOptions(channel, options0().entrySet().toArray(newOptionArray(0)), logger);
+        //Attributes维护一些业务数据key-value，在后期可以进行获取
         setAttributes(channel, attrs0().entrySet().toArray(newAttrArray(0)));
-
+        /**
+         * ChannelPipeline在什么时候创建的呢？
+         * 在创建AbstractChannel初始化的时候创建
+         * Channel有ChannelPipeline的引用
+         * ChannelPipeline中又有Channel的引用
+         */
         ChannelPipeline p = channel.pipeline();
 
         final EventLoopGroup currentChildGroup = childGroup;
@@ -142,6 +158,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                 childOptions.entrySet().toArray(newOptionArray(0));
         final Entry<AttributeKey<?>, Object>[] currentChildAttrs = childAttrs.entrySet().toArray(newAttrArray(0));
 
+        //在初始化阶段是没有被执行的，在后面的某一个阶段执行
         p.addLast(new ChannelInitializer<Channel>() {
             @Override
             public void initChannel(final Channel ch) {
@@ -150,12 +167,15 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                 if (handler != null) {
                     pipeline.addLast(handler);
                 }
-                /**
-                 * 添加自定义的handler
-                 */
                 ch.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {
+                        /**
+                         * ServerBootstrapAcceptor 由Netty提供的，
+                         * 就是由他注册到WorkerGroup上的
+                         * ServerBootstrapAcceptor 也是一个ChannelHandler
+                         * 在其中的channelRead方法中有注册的逻辑
+                         */
                         pipeline.addLast(new ServerBootstrapAcceptor(
                                 ch, currentChildGroup, currentChildHandler, currentChildOptions, currentChildAttrs));
                     }

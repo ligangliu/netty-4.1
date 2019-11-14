@@ -28,11 +28,9 @@ public class MyServer {
          * NioEventLoop -- Thread
          * bossGroup用于接收Tcp请求，它会将请求交给workGroup，workGroup获得真正的连接，然后和连接进行通信，比如读写解码等操作
          *
-         *
-         *
          */
         //第一步建立bossGroup 接受数据然后转发给workerGroup ，是一个死循环
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
+        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         //第二部 workerGroup 完成实际数据的处理，也是一个死循环
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -45,11 +43,26 @@ public class MyServer {
              * 添加一个 SocketChannel（不是 ServerSocketChannel，针对的客户端连接后的处理）的 handler。
              */
             ServerBootstrap serverBootstrap = new ServerBootstrap();
+            /**
+             * group(bossGroup,workerGroup)
+             * 会将我们的bossGroup和workerGroup赋值给ServerBootstrap以及他的父类的引用
+             * 这样的话我们就可以通过引用使用它
+             */
             serverBootstrap.group(bossGroup,workerGroup)
+                    /**
+                     * channel(NioServerSocketChannel.class)
+                     * 完成了channel(NioServerSocketChannel.class)
+                     * private volatile ChannelFactory<? extends C> channelFactory;的赋值
+                     */
                     .channel(NioServerSocketChannel.class)
+                    //对ServerBootstrap中childOptions赋值
+                    //ChannelOption 对应的就是TCP的一些配置属性
                     .childOption(ChannelOption.SO_BACKLOG,100)
-                   // .childAttr(null,null)
+                    //Attributes维护一些业务数据key-value，在后期可以进行获取
+                   // .attr(null,null)
+                    //对ServerBootstrap中private volatile ChannelHandler handler;赋值
                     .handler(new LoggingHandler(LogLevel.INFO))
+                    //对ServerBootstrap中private volatile ChannelHandler childHandler;赋值
                     .childHandler(
                     new ChannelInitializer<SocketChannel>() {
                         @Override

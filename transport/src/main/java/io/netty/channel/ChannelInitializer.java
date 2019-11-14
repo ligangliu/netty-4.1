@@ -68,6 +68,9 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
      *                      {@link #exceptionCaught(ChannelHandlerContext, Throwable)} which will by default close
      *                      the {@link Channel}.
      */
+    /**
+     * 当Channel注册的时候会执行该方法
+     */
     protected abstract void initChannel(C ch) throws Exception;
 
     @Override
@@ -102,6 +105,13 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
     /**
      * {@inheritDoc} If override this method ensure you call super!
      */
+    /**
+     * 在pipeline.addLast()方法中，会回调handlerAdded方法
+     * （在DefaultChannelPipeline中的addLast()中callHandlerAdded0()调用）
+     * 在这里就可以把initChannel()方法中我们添加的handler添加进去
+     * @param ctx
+     * @throws Exception
+     */
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         if (ctx.channel().isRegistered()) {
@@ -133,6 +143,9 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
                 exceptionCaught(ctx, cause);
             } finally {
                 ChannelPipeline pipeline = ctx.pipeline();
+                /**
+                 * 移除ChannelInitializer,因为ChannelInitializer也是一个Handler
+                 */
                 if (pipeline.context(this) != null) {
                     pipeline.remove(this);
                 }
