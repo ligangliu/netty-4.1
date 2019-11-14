@@ -885,6 +885,11 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         boolean inEventLoop = inEventLoop();
         addTask(task);
         if (!inEventLoop) {
+            /**
+             * 当 EventLoop.execute 第一次被调用时, 就会触发 startThread()
+             * 的调用, 进而导致了 EventLoop 所对应的 Java 线程的启动。
+             * 那么NioEventLoop中run()是一个死循环，会一直执行任务队列中的任务。
+             */
             startThread();
             if (isShutdown()) {
                 boolean reject = false;
@@ -1047,6 +1052,9 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                 boolean success = false;
                 updateLastExecutionTime();
                 try {
+                    /**
+                     * 看到没，这里就是启动NioEventLoop
+                     */
                     SingleThreadEventExecutor.this.run();
                     success = true;
                 } catch (Throwable t) {

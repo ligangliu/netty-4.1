@@ -83,6 +83,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
     protected AbstractChannel(Channel parent, ChannelId id) {
         this.parent = parent;
         this.id = id;
+        //NioMessageUnsafe
         unsafe = newUnsafe();
         pipeline = newChannelPipeline();
     }
@@ -448,6 +449,9 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             return remoteAddress0();
         }
 
+        /**
+         * 注册的逻辑
+         */
         @Override
         public final void register(EventLoop eventLoop, final ChannelPromise promise) {
             if (eventLoop == null) {
@@ -464,12 +468,41 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
 
             AbstractChannel.this.eventLoop = eventLoop;
-
+            /**
+             * 一个EventLoopGroup当中包含一个或多个EventLoop
+             * 一个EventLoop在它的整个生命周期只会与一个Thread上进行处理
+             * 所有由EventLoop所处理的各种I/O事件都将在它所关联的的那个Thread上进行处理
+             * 一个Channel在它的整个生命周期中只会注册在一个EventLoop上
+             * 一个EventLoop在运行过程当中，会被分配给一个或多个Channel
+             */
+            /**
+             * 因为一个channel在生命周期中只绑定一个EventLoop的，
+             * 这样的话，运行注册的代码如果和该channel绑定的EventLoop是同一个，直接注册
+             * 如果不是，也是以一个任务的形式放入该channel绑定的EventLoop,然后由该EventLoop
+             * 顺序执行任务而进行注册
+             *
+             * 所以在Netty中，Channel的实现一定是线程安全的；基于此，我们可以存储一个Channel的引用，
+             * 并且在需要像远端发送点发送数据时，通过这个引用来调用Channel相应的方法；即便当时有很多
+             * 线程都在使用它也不会出现多线程问题；而且，消息一定会按照顺序发送出去。
+             *
+             * 所以在我们的业务开发中，不要将长时间执行的耗时任务放入到EventLoop中。
+             * 因为它将会一直阻塞在该线程所对应的所有channel上的其他执行任务，如果
+             * 我们需要进行阻塞调用或耗时的操作（实际开发中很常见），那么我们就需要使用一个
+             * 专门的EventExecutor
+             *
+             * 通常有两种实现方法
+             * 1.在ChannelHandler的会调方法中，使用自己定义的业务线程池，这样就可以实现异步调用
+             * 2.借助Netty提供的ChannelPipeline添加ChannelHandler时调用addLast方法传递EventExecutor
+             */
             if (eventLoop.inEventLoop()) {
                 register0(promise);
             } else {
                 try {
-                    //开始真正的异步，boss线程开始启动
+                    //提交一个任务。开始真正的异步，boss线程开始启动
+                    /**
+                     * 这里可以跟进去，进入SingleThreadEventExecutor中
+                     * ，它会被加入到该EventLoop的队列中addTask(task);
+                     */
                     eventLoop.execute(new Runnable() {
                         @Override
                         public void run() {
@@ -496,7 +529,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 }
                 boolean firstRegistration = neverRegistered;
                 /**
-                 *
+                 * 调用的就是AbstractNioChannel.doRegister()
                  */
                 doRegister();
                 neverRegistered = false;
@@ -504,9 +537,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
                 // Ensure we call handlerAdded(...) before we actually notify the promise. This is needed as the
                 // user may already fire events through the pipeline in the ChannelFutureListener.
-                /**
-                 * 执行我们在ChannelIntializer匿名类中的initChannel方法
-                 */
+                //执行一些方法的回调
                 pipeline.invokeHandlerAddedIfNeeded();
 
                 safeSetSuccess(promise);

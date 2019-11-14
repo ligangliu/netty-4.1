@@ -27,6 +27,12 @@ import static io.netty.util.internal.ObjectUtil.checkNotNull;
  * The default {@link ChannelPromise} implementation.  It is recommended to use {@link Channel#newPromise()} to create
  * a new {@link ChannelPromise} rather than calling the constructor explicitly.
  */
+
+/**
+ * JDK提供的Future只能通过手工方式检查执行结果，而这个操作会阻塞的；
+ * Netty则对ChannelFuture进行了增强，通过ChannelFutureListener以
+ * 回调的方式来获取执行结果，去除了手工检查阻塞的操作。
+ */
 public class DefaultChannelPromise extends DefaultPromise<Void> implements ChannelPromise, FlushCheckpoint {
 
     private final Channel channel;

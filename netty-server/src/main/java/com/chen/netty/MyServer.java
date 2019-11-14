@@ -83,7 +83,6 @@ public class MyServer {
              * main线程阻塞等待关闭。
              */
             ChannelFuture channelFuture = serverBootstrap.bind(9999).sync();
-
             System.out.println("=================服务端开始工作================");
             channelFuture.channel().closeFuture().sync();
         }finally {

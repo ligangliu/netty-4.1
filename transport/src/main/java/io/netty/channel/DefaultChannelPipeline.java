@@ -225,6 +225,9 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             // ChannelHandler.handlerAdded(...) once the channel is registered.
             if (!registered) {
                 newCtx.setAddPending();
+                /**
+                 * 对于没有注册完，先提交一个任务，后续进行回调
+                 */
                 callHandlerCallbackLater(newCtx, true);
                 return this;
             }
@@ -236,7 +239,10 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             }
         }
         /**
+         * 对于已经注册了的Channel，就可以直接调用handerAdder()
          * 在这里调用handler().handlerAdded()方法
+         * 调用handerAdded()很重要，因为在ChannelInitializer中handerAdded()
+         * 方法会执行initChannel()将其中所有的Handler添加至pipeline中
          */
         callHandlerAdded0(newCtx);
         return this;
