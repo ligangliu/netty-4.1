@@ -94,6 +94,9 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                 ((SocketChannelConfig) config).isAllowHalfClosure();
     }
 
+    /**
+     * Channel中的unsafe的实现类
+     */
     protected class NioByteUnsafe extends AbstractNioUnsafe {
 
         private void closeOnRead(ChannelPipeline pipeline) {

@@ -276,6 +276,8 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                 if (first) {
                     cumulation = data;
                 } else {
+                    //当出现粘包的时候，cumulation不会是null,那么first = false,
+                    //然后cumulation会加上这次发送的data和上次缓存的cumulation
                     cumulation = cumulator.cumulate(ctx.alloc(), cumulation, data);
                 }
                 callDecode(ctx, cumulation, out);
@@ -418,6 +420,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
      * @param in            the {@link ByteBuf} from which to read data
      * @param out           the {@link List} to which decoded messages should be added
      */
+    //https://www.jianshu.com/p/42ba74cf3d62
     protected void callDecode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
         try {
             while (in.isReadable()) {
@@ -448,11 +451,15 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                 if (ctx.isRemoved()) {
                     break;
                 }
-
+                /**
+                 * 如果outsize == out.size()说明decode没有读取数据
+                 */
                 if (outSize == out.size()) {
+                    //说明出现了半包
                     if (oldInputLength == in.readableBytes()) {
                         break;
                     } else {
+                        //半包可能已经变成了全包
                         continue;
                     }
                 }

@@ -244,6 +244,17 @@ import java.nio.charset.UnsupportedCharsetException;
  *
  * Please refer to {@link ByteBufInputStream} and
  * {@link ByteBufOutputStream}.
+ *
+ * ByteBuf 的实现类有两种纬度
+ * 1。堆上(heap buffer)和非堆上(direct buffer),复合缓冲区(composite buffer)
+ * 2。池化和非池化
+ * 所有两两组合就有四种类型的实现类
+ * UnpooledHeapByteBuf {
+ *     byte[] array; 并不像nio中的ByteBuffer中final byte[] hb;
+ *     也就是说array可以重新指向新的数组，而且netty为我们实现了自动扩容机制，这些扩容机制
+ *     我们用户也感知不到，类似与ArrayList
+ * }
+ *
  */
 public abstract class ByteBuf implements ReferenceCounted, Comparable<ByteBuf> {
 
